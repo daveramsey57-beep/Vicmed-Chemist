@@ -1,0 +1,306 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Medicine App - User Dashboard</title>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css" />
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+  <!-- Login Page -->
+  <div id="loginPage" class="login-page">
+    <div class="login-container">
+      <div class="login-header">
+        <i class="fa-solid fa-pills"></i>
+        <h1>MediCare</h1>
+        <p>Medicine Management System</p>
+      </div>
+      <form id="loginForm" class="login-form">
+        <div class="form-group">
+          <label>Username</label>
+          <div class="input-group">
+            <i class="fa-solid fa-at"></i>
+            <input type="text" id="username" placeholder="@user001" required />
+          </div>
+        </div>
+        <div class="form-group">
+          <label>Password</label>
+          <div class="input-group">
+            <i class="fa-solid fa-lock"></i>
+            <input type="password" id="password" placeholder="Enter password" required />
+          </div>
+        </div>
+        <button type="submit" class="btn-login">
+          <i class="fa-solid fa-sign-in-alt"></i> Login
+        </button>
+        <p id="loginError" class="error-message"></p>
+      </form>
+    </div>
+  </div>
+
+  <!-- Main App (hidden until login) -->
+  <div id="mainApp" class="app-container" style="display: none;">
+    <!-- Sidebar -->
+    <aside class="sidebar">
+      <div class="logo">
+        <i class="fa-solid fa-pills"></i>
+        <span>MediCare</span>
+      </div>
+      <nav class="nav-menu">
+        <a href="#" class="nav-item active" data-page="dashboard">
+          <i class="fa-solid fa-chart-line"></i>
+          <span>Dashboard</span>
+        </a>
+        <a href="#" class="nav-item" data-page="sell">
+          <i class="fa-solid fa-cash-register"></i>
+          <span>Sell Drugs</span>
+        </a>
+        <a href="#" class="nav-item" data-page="sales">
+          <i class="fa-solid fa-receipt"></i>
+          <span>Sales History</span>
+        </a>
+        <a href="#" class="nav-item" data-page="inventory">
+          <i class="fa-solid fa-boxes-stacked"></i>
+          <span>Inventory</span>
+        </a>
+      </nav>
+      <div class="sidebar-footer">
+        <div class="user-info">
+          <i class="fa-solid fa-user-circle"></i>
+          <span>Admin User</span>
+        </div>
+        <button class="logout-btn" onclick="logout()">
+          <i class="fa-solid fa-sign-out-alt"></i> Logout
+        </button>
+      </div>
+    </aside>
+
+    <!-- Main Content -->
+    <main class="main-content">
+      <!-- Dashboard Page -->
+      <section id="dashboard-page" class="page active">
+        <header class="page-header">
+          <h1><i class="fa-solid fa-chart-line"></i> Dashboard</h1>
+          <p class="date-display" id="currentDate"></p>
+        </header>
+
+        <div class="dashboard-stats">
+          <div class="stat-card total-sales">
+            <div class="stat-icon">
+              <i class="fa-solid fa-coins"></i>
+            </div>
+            <div class="stat-info">
+              <span class="stat-label">Total Sales</span>
+              <span class="stat-value" id="totalSales">KSh 0</span>
+            </div>
+          </div>
+          <div class="stat-card daily">
+            <div class="stat-icon">
+              <i class="fa-solid fa-calendar-day"></i>
+            </div>
+            <div class="stat-info">
+              <span class="stat-label">Today's Sales</span>
+              <span class="stat-value" id="dailyTotal">KSh 0</span>
+            </div>
+          </div>
+          <div class="stat-card monthly">
+            <div class="stat-icon">
+              <i class="fa-solid fa-calendar"></i>
+            </div>
+            <div class="stat-info">
+              <span class="stat-label">This Month</span>
+              <span class="stat-value" id="monthlyTotal">KSh 0</span>
+            </div>
+          </div>
+          <div class="stat-card yearly">
+            <div class="stat-icon">
+              <i class="fa-solid fa-calendar-check"></i>
+            </div>
+            <div class="stat-info">
+              <span class="stat-label">This Year</span>
+              <span class="stat-value" id="yearlyTotal">KSh 0</span>
+            </div>
+          </div>
+        </div>
+
+        <div class="recent-sales-section">
+          <h2><i class="fa-solid fa-clock-rotate-left"></i> Recent Sales</h2>
+          <div class="table-container">
+            <table class="data-table">
+              <thead>
+                <tr>
+                  <th>Drug</th>
+                  <th>Category</th>
+                  <th>Qty</th>
+                  <th>Total</th>
+                  <th>Date</th>
+                </tr>
+              </thead>
+              <tbody id="recentSalesBody"></tbody>
+            </table>
+          </div>
+        </div>
+      </section>
+
+      <!-- Sell Drugs Page -->
+      <section id="sell-page" class="page">
+        <header class="page-header">
+          <h1><i class="fa-solid fa-cash-register"></i> Sell Drugs</h1>
+        </header>
+
+        <div class="sell-form-container">
+          <div class="form-card">
+            <h3>New Sale</h3>
+            <div class="form-group search-group">
+              <label>Search Drug</label>
+              <input type="text" id="drugSearch" placeholder="Search by name or category..." class="search-input" />
+            </div>
+            <div class="form-group">
+              <label>Select Drug</label>
+              <select id="drugSelect" class="form-select"></select>
+            </div>
+            <div class="form-group">
+              <label>Quantity</label>
+              <input type="number" id="qty" placeholder="Enter quantity" class="form-input" min="1" />
+            </div>
+            <button class="btn-primary" onclick="sellDrug()">
+              <i class="fa-solid fa-check"></i> Complete Sale
+            </button>
+          </div>
+        </div>
+      </section>
+
+      <!-- Sales History Page -->
+      <section id="sales-page" class="page">
+        <header class="page-header">
+          <h1><i class="fa-solid fa-receipt"></i> Sales History</h1>
+        </header>
+
+        <div class="filters-section">
+          <div class="date-filters">
+            <div class="filter-group">
+              <label>From</label>
+              <input type="date" id="startDate" class="form-input" />
+            </div>
+            <div class="filter-group">
+              <label>To</label>
+              <input type="date" id="endDate" class="form-input" />
+            </div>
+            <button class="btn-secondary" id="filterSalesBtn">
+              <i class="fa-solid fa-filter"></i> Filter
+            </button>
+            <button class="btn-outline" id="clearSalesFilterBtn">
+              <i class="fa-solid fa-xmark"></i> Clear
+            </button>
+          </div>
+        </div>
+
+        <div class="table-container">
+          <table class="data-table">
+            <thead>
+              <tr>
+                <th>Drug</th>
+                <th>Category</th>
+                <th>Quantity</th>
+                <th>Total (KSh)</th>
+                <th>Date</th>
+                <th>Actions</th>
+              </tr>
+            </thead>
+            <tbody id="salesBody"></tbody>
+          </table>
+        </div>
+      </section>
+
+      <!-- Inventory Page -->
+      <section id="inventory-page" class="page">
+        <header class="page-header">
+          <h1><i class="fa-solid fa-boxes-stacked"></i> Inventory</h1>
+          <button class="btn-primary" onclick="showAddDrugModal()">
+            <i class="fa-solid fa-plus"></i> Add Drug
+          </button>
+        </header>
+
+        <div class="inventory-stats">
+          <div class="inv-stat">
+            <span class="inv-value" id="totalDrugs">0</span>
+            <span class="inv-label">Total Drugs</span>
+          </div>
+          <div class="inv-stat">
+            <span class="inv-value low-stock" id="lowStockCount">0</span>
+            <span class="inv-label">Low Stock</span>
+          </div>
+          <div class="inv-stat">
+            <span class="inv-value" id="totalValue">KSh 0</span>
+            <span class="inv-label">Total Value</span>
+          </div>
+        </div>
+
+        <div class="table-container">
+          <table class="data-table">
+            <thead>
+              <tr>
+                <th>Name</th>
+                <th>Category</th>
+                <th>Price</th>
+                <th>Quantity</th>
+                <th>Expiry</th>
+                <th>Actions</th>
+              </tr>
+            </thead>
+            <tbody id="inventoryBody"></tbody>
+          </table>
+        </div>
+      </section>
+    </main>
+  </div>
+
+  <!-- Modal for Add/Edit Drug -->
+  <div id="drugModal" class="modal">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h2 id="modalTitle">Add New Drug</h2>
+        <button class="close-modal" onclick="closeModal()">&times;</button>
+      </div>
+      <form id="drugForm" onsubmit="saveDrug(event)">
+        <input type="hidden" id="editDrugId" />
+        <div class="form-group">
+          <label>Drug Name</label>
+          <input type="text" id="drugName" required class="form-input" />
+        </div>
+        <div class="form-group">
+          <label>Category</label>
+          <select id="drugCategory" class="form-select">
+            <option value="Pain Relief">Pain Relief</option>
+            <option value="Antibiotic">Antibiotic</option>
+            <option value="Allergy">Allergy</option>
+            <option value="Vitamins">Vitamins</option>
+            <option value="Other">Other</option>
+          </select>
+        </div>
+        <div class="form-row">
+          <div class="form-group">
+            <label>Price (KSh)</label>
+            <input type="number" id="drugPrice" required class="form-input" min="0" />
+          </div>
+          <div class="form-group">
+            <label>Quantity</label>
+            <input type="number" id="drugQuantity" required class="form-input" min="0" />
+          </div>
+        </div>
+        <div class="form-group">
+          <label>Expiry Date</label>
+          <input type="date" id="drugExpiry" class="form-input" />
+        </div>
+        <div class="form-actions">
+          <button type="submit" class="btn-primary">Save Drug</button>
+          <button type="button" class="btn-outline" onclick="closeModal()">Cancel</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <script src="app.js"></script>
+</body>
+</html>
