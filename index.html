@@ -60,6 +60,10 @@
           <i class="fa-solid fa-plus-circle"></i>
           <span>Add Drugs</span>
         </a>
+        <a href="#" class="nav-item" data-page="admin-panel">
+          <i class="fa-solid fa-gear"></i>
+          <span>Admin Panel</span>
+        </a>
       </nav>
       
       <!-- User Navigation (limited access) -->
@@ -399,6 +403,46 @@
             <i class="fa-solid fa-save"></i> Save Drug
           </button>
         </form>
+      </section>
+
+      <!-- Admin Panel Page -->
+      <section id="admin-panel-page" class="page">
+        <header class="page-header">
+          <h1><i class="fa-solid fa-gear"></i> Admin Panel</h1>
+        </header>
+
+        <div class="form-card" style="max-width: 600px;">
+          <h3>Account Settings</h3>
+          
+          <div class="form-group">
+            <label>Current User</label>
+            <input type="text" id="adminUsername" class="form-input" readonly />
+          </div>
+          
+          <div class="form-group">
+            <label>Role</label>
+            <input type="text" id="adminRole" class="form-input" readonly />
+          </div>
+          
+          <div class="form-actions" style="margin-top: 24px;">
+            <button class="btn-danger" onclick="logout()">
+              <i class="fa-solid fa-sign-out-alt"></i> Logout
+            </button>
+          </div>
+        </div>
+
+        <div class="form-card" style="max-width: 600px; margin-top: 20px;">
+          <h3>Session Info</h3>
+          <p style="color: var(--gray-400); margin-bottom: 16px;">Manage your session and security settings.</p>
+          
+          <div style="display: flex; align-items: center; gap: 12px;">
+            <i class="fa-solid fa-shield-halved" style="font-size: 2rem; color: var(--primary);"></i>
+            <div>
+              <strong>Secure Session</strong>
+              <p style="font-size: 0.85rem; color: var(--gray-400);">Your session is protected</p>
+            </div>
+          </div>
+        </div>
       </section>
     </main>
   </div>
