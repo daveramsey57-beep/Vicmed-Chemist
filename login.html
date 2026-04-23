@@ -136,6 +136,7 @@
                 const isAdmin = username === '@admin2047';
                 localStorage.setItem('role', isAdmin ? 'admin' : 'user');
                 localStorage.setItem('isLoggedIn', 'true');
+                localStorage.setItem('username', username);
                 
                 // Small delay to ensure localStorage is saved
                 setTimeout(function() {
