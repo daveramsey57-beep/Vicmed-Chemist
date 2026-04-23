@@ -876,6 +876,20 @@ function loadAdminPages() {
     renderStock();
     renderRestockPage();
     renderExpiryPage();
+    populateAdminPanel();
+}
+
+function populateAdminPanel() {
+    const usernameEl = document.getElementById('adminUsername');
+    const roleEl = document.getElementById('adminRole');
+    
+    if (usernameEl) {
+        usernameEl.value = localStorage.getItem('username') || 'admin';
+    }
+    if (roleEl) {
+        const role = localStorage.getItem('role');
+        roleEl.value = role === 'admin' ? 'Administrator' : 'User';
+    }
 }
 
 // Close modal on outside click
