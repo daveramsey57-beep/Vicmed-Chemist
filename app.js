@@ -217,12 +217,18 @@ async function deleteSaleFromFirebase(id) {
 
 // ===== Init =====
 async function waitForFirebase() {
+    console.log('Waiting for Firebase...');
     let attempts = 0;
-    while (!window.db && attempts < 50) {
+    while (!window.db && attempts < 100) {
         await new Promise(r => setTimeout(r, 100));
         attempts++;
     }
-    return !!window.db;
+    if (window.db) {
+        console.log('Firebase ready!');
+        return true;
+    }
+    console.log('Firebase not available, using localStorage');
+    return false;
 }
 
 document.addEventListener("DOMContentLoaded", async () => {
@@ -230,11 +236,14 @@ document.addEventListener("DOMContentLoaded", async () => {
     
     showMainApp();
     
-    const fbReady = await waitForFirebase();
-    if (fbReady) {
-        await loadDrugsFromFirebase();
-        await loadSalesFromFirebase();
-    }
+    setTimeout(async () => {
+        const fbReady = await waitForFirebase();
+        if (fbReady) {
+            await loadDrugsFromFirebase();
+            await loadSalesFromFirebase();
+        }
+        loadAll();
+    }, 500);
 });
 
 function checkLoginStatus() {
