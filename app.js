@@ -6,6 +6,7 @@ let currentRole = 'user';
 let dbReady = false;
 const SESSION_TIMEOUT = 30 * 60 * 1000; // 30 minutes
 let lastActivity = Date.now();
+let useLocalStorage = false;
 
 // Role check
 function getRole() {
@@ -14,6 +15,24 @@ function getRole() {
 
 function isAdmin() {
     return getRole() === 'admin';
+}
+
+// ===== LocalStorage Functions =====
+function saveToLocalStorage(key, data) {
+    try {
+        localStorage.setItem(key, JSON.stringify(data));
+    } catch (e) {
+        console.log('localStorage not available');
+    }
+}
+
+function loadFromLocalStorage(key) {
+    try {
+        const data = localStorage.getItem(key);
+        return data ? JSON.parse(data) : null;
+    } catch (e) {
+        return null;
+    }
 }
 
 // ===== DOM Elements =====
@@ -52,6 +71,7 @@ const modalTitle = document.getElementById("modalTitle");
 // ===== Firebase Functions =====
 async function loadDrugsFromFirebase() {
     try {
+        if (!window.db) throw new Error('Firebase not ready');
         const drugsRef = window.collection(window.db, 'drugs');
         const snapshot = await window.getDocs(drugsRef);
         allDrugs = [];
@@ -59,69 +79,139 @@ async function loadDrugsFromFirebase() {
             allDrugs.push({ id: doc.id, ...doc.data() });
         });
         dbReady = true;
+        useLocalStorage = false;
+        saveToLocalStorage('vicmed_drugs', allDrugs);
     } catch (e) {
-        console.log('Loading default drugs (Firebase not ready yet)');
-        allDrugs = getDefaultDrugs();
+        console.log('Firebase not ready, using localStorage fallback');
+        const cached = loadFromLocalStorage('vicmed_drugs');
+        if (cached && cached.length > 0) {
+            allDrugs = cached;
+            useLocalStorage = true;
+            dbReady = false;
+        } else {
+            allDrugs = getDefaultDrugs();
+            useLocalStorage = true;
+            dbReady = false;
+        }
     }
 }
 
 async function loadSalesFromFirebase() {
     try {
+        if (!window.db) throw new Error('Firebase not ready');
         const salesRef = window.collection(window.db, 'sales');
         const snapshot = await window.getDocs(salesRef);
         allSales = [];
         snapshot.forEach(doc => {
             allSales.push({ id: doc.id, ...doc.data() });
         });
+        saveToLocalStorage('vicmed_sales', allSales);
     } catch (e) {
-        console.log('No sales yet');
-        allSales = [];
+        console.log('Firebase not ready, using localStorage fallback');
+        const cached = loadFromLocalStorage('vicmed_sales');
+        if (cached && cached.length > 0) {
+            allSales = cached;
+        } else {
+            allSales = [];
+        }
     }
 }
 
 async function saveDrugToFirebase(drug) {
     try {
-        if (drug.id) {
-            const drugRef = window.doc(window.db, 'drugs', drug.id);
-            await window.updateDoc(drugRef, drug);
+        if (window.db && !useLocalStorage) {
+            if (drug.id) {
+                const drugRef = window.doc(window.db, 'drugs', drug.id);
+                await window.updateDoc(drugRef, drug);
+            } else {
+                const drugsRef = window.collection(window.db, 'drugs');
+                const docRef = await window.addDoc(drugsRef, drug);
+                drug.id = docRef.id;
+            }
         } else {
-            const drugsRef = window.collection(window.db, 'drugs');
-            await window.addDoc(drugsRef, drug);
+            if (!drug.id) drug.id = 'drug_' + Date.now();
+            const idx = allDrugs.findIndex(d => d.id === drug.id);
+            if (idx >= 0) {
+                allDrugs[idx] = drug;
+            } else {
+                allDrugs.push(drug);
+            }
+            saveToLocalStorage('vicmed_drugs', allDrugs);
         }
     } catch (e) {
-        console.log('Firebase not connected, using localStorage fallback');
+        console.log('Firebase error, using localStorage');
+        if (!drug.id) drug.id = 'drug_' + Date.now();
+        const idx = allDrugs.findIndex(d => d.id === drug.id);
+        if (idx >= 0) {
+            allDrugs[idx] = drug;
+        } else {
+            allDrugs.push(drug);
+        }
+        saveToLocalStorage('vicmed_drugs', allDrugs);
     }
 }
 
 async function saveSaleToFirebase(sale) {
     try {
-        const salesRef = window.collection(window.db, 'sales');
-        if (sale.id) {
-            const saleRef = window.doc(window.db, 'sales', sale.id);
-            await window.updateDoc(saleRef, sale);
+        if (window.db && !useLocalStorage) {
+            const salesRef = window.collection(window.db, 'sales');
+            if (sale.id) {
+                const saleRef = window.doc(window.db, 'sales', sale.id);
+                await window.updateDoc(saleRef, sale);
+            } else {
+                const docRef = await window.addDoc(salesRef, sale);
+                sale.id = docRef.id;
+            }
         } else {
-            await window.addDoc(salesRef, sale);
+            if (!sale.id) sale.id = 'sale_' + Date.now();
+            const idx = allSales.findIndex(s => s.id === sale.id);
+            if (idx >= 0) {
+                allSales[idx] = sale;
+            } else {
+                allSales.push(sale);
+            }
+            saveToLocalStorage('vicmed_sales', allSales);
         }
     } catch (e) {
-        console.log('Firebase not connected');
+        console.log('Firebase error, using localStorage');
+        if (!sale.id) sale.id = 'sale_' + Date.now();
+        const idx = allSales.findIndex(s => s.id === sale.id);
+        if (idx >= 0) {
+            allSales[idx] = sale;
+        } else {
+            allSales.push(sale);
+        }
+        saveToLocalStorage('vicmed_sales', allSales);
     }
 }
 
 async function deleteDrugFromFirebase(id) {
     try {
-        const drugRef = window.doc(window.db, 'drugs', id);
-        await window.deleteDoc(drugRef);
+        if (window.db && !useLocalStorage) {
+            const drugRef = window.doc(window.db, 'drugs', id);
+            await window.deleteDoc(drugRef);
+        }
+        allDrugs = allDrugs.filter(d => d.id !== id);
+        saveToLocalStorage('vicmed_drugs', allDrugs);
     } catch (e) {
-        console.log('Firebase not connected');
+        console.log('Firebase error, using localStorage');
+        allDrugs = allDrugs.filter(d => d.id !== id);
+        saveToLocalStorage('vicmed_drugs', allDrugs);
     }
 }
 
 async function deleteSaleFromFirebase(id) {
     try {
-        const saleRef = window.doc(window.db, 'sales', id);
-        await window.deleteDoc(saleRef);
+        if (window.db && !useLocalStorage) {
+            const saleRef = window.doc(window.db, 'sales', id);
+            await window.deleteDoc(saleRef);
+        }
+        allSales = allSales.filter(s => s.id !== id);
+        saveToLocalStorage('vicmed_sales', allSales);
     } catch (e) {
-        console.log('Firebase not connected');
+        console.log('Firebase error, using localStorage');
+        allSales = allSales.filter(s => s.id !== id);
+        saveToLocalStorage('vicmed_sales', allSales);
     }
 }
 
@@ -279,12 +369,24 @@ async function loadAll() {
 
 function setCurrentDate() {
     const now = new Date();
-    currentDateEl.textContent = now.toLocaleDateString("en-KE", { 
+    const dateStr = now.toLocaleDateString("en-KE", { 
         weekday: "long", 
         year: "numeric", 
         month: "long", 
         day: "numeric" 
     });
+    currentDateEl.textContent = dateStr;
+    
+    const statusEl = document.getElementById('storageStatus');
+    if (statusEl) {
+        if (useLocalStorage) {
+            statusEl.textContent = 'Local Storage';
+            statusEl.style.color = '#f59e0b';
+        } else {
+            statusEl.textContent = 'Firebase';
+            statusEl.style.color = '#22c55e';
+        }
+    }
 }
 
 // ===== Navigation =====
