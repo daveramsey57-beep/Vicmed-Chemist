@@ -770,7 +770,7 @@ function updateNavByRole() {
     
     document.getElementById('userNavItems').style.display = isUserAdmin ? 'none' : 'flex';
     document.getElementById('adminNavItems').style.display = isUserAdmin ? 'flex' : 'none';
-    document.getElementById('userInfoName').textContent = isUserAdmin ? 'Admin User' : 'Pharmacy User';
+    document.getElementById('userInfoName').textContent = isUserAdmin ? 'Admin User' : 'Chemist User';
     
     const addDrugBtn = document.getElementById('addDrugNavBtn');
     if (addDrugBtn) {
