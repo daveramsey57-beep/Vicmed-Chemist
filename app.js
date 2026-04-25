@@ -3,10 +3,8 @@ let allDrugs = [];
 let allSales = [];
 const MIN_STOCK = 5;
 let currentRole = 'user';
-let dbReady = false;
-const SESSION_TIMEOUT = 30 * 60 * 1000; // 30 minutes
+const SESSION_TIMEOUT = 30 * 60 * 1000;
 let lastActivity = Date.now();
-let useLocalStorage = false;
 
 // Role check
 function getRole() {
@@ -15,24 +13,6 @@ function getRole() {
 
 function isAdmin() {
     return getRole() === 'admin';
-}
-
-// ===== LocalStorage Functions =====
-function saveToLocalStorage(key, data) {
-    try {
-        localStorage.setItem(key, JSON.stringify(data));
-    } catch (e) {
-        console.log('localStorage not available');
-    }
-}
-
-function loadFromLocalStorage(key) {
-    try {
-        const data = localStorage.getItem(key);
-        return data ? JSON.parse(data) : null;
-    } catch (e) {
-        return null;
-    }
 }
 
 // ===== DOM Elements =====
@@ -71,164 +51,86 @@ const modalTitle = document.getElementById("modalTitle");
 // ===== Firebase Functions =====
 async function loadDrugsFromFirebase() {
     try {
-        if (!window.db) throw new Error('Firebase not ready');
         const drugsRef = window.collection(window.db, 'drugs');
         const snapshot = await window.getDocs(drugsRef);
         allDrugs = [];
         snapshot.forEach(doc => {
             allDrugs.push({ id: doc.id, ...doc.data() });
         });
-        dbReady = true;
-        useLocalStorage = false;
-        saveToLocalStorage('vicmed_drugs', allDrugs);
     } catch (e) {
-        console.log('Firebase not ready, using localStorage fallback');
-        const cached = loadFromLocalStorage('vicmed_drugs');
-        if (cached && cached.length > 0) {
-            allDrugs = cached;
-            useLocalStorage = true;
-            dbReady = false;
-        } else {
-            allDrugs = getDefaultDrugs();
-            useLocalStorage = true;
-            dbReady = false;
-        }
+        console.log('Loading default drugs (Firebase not ready yet)');
+        allDrugs = getDefaultDrugs();
     }
 }
 
 async function loadSalesFromFirebase() {
     try {
-        if (!window.db) throw new Error('Firebase not ready');
         const salesRef = window.collection(window.db, 'sales');
         const snapshot = await window.getDocs(salesRef);
         allSales = [];
         snapshot.forEach(doc => {
             allSales.push({ id: doc.id, ...doc.data() });
         });
-        saveToLocalStorage('vicmed_sales', allSales);
     } catch (e) {
-        console.log('Firebase not ready, using localStorage fallback');
-        const cached = loadFromLocalStorage('vicmed_sales');
-        if (cached && cached.length > 0) {
-            allSales = cached;
-        } else {
-            allSales = [];
-        }
+        console.log('No sales yet');
+        allSales = [];
     }
 }
 
 async function saveDrugToFirebase(drug) {
     try {
-        if (window.db && !useLocalStorage) {
-            if (drug.id) {
-                const drugRef = window.doc(window.db, 'drugs', drug.id);
-                await window.updateDoc(drugRef, drug);
-            } else {
-                const drugsRef = window.collection(window.db, 'drugs');
-                const docRef = await window.addDoc(drugsRef, drug);
-                drug.id = docRef.id;
-            }
+        if (drug.id) {
+            const drugRef = window.doc(window.db, 'drugs', drug.id);
+            await window.updateDoc(drugRef, drug);
         } else {
-            if (!drug.id) drug.id = 'drug_' + Date.now();
-            const idx = allDrugs.findIndex(d => d.id === drug.id);
-            if (idx >= 0) {
-                allDrugs[idx] = drug;
-            } else {
-                allDrugs.push(drug);
-            }
-            saveToLocalStorage('vicmed_drugs', allDrugs);
+            const drugsRef = window.collection(window.db, 'drugs');
+            await window.addDoc(drugsRef, drug);
         }
     } catch (e) {
-        console.log('Firebase error, using localStorage');
-        if (!drug.id) drug.id = 'drug_' + Date.now();
-        const idx = allDrugs.findIndex(d => d.id === drug.id);
-        if (idx >= 0) {
-            allDrugs[idx] = drug;
-        } else {
-            allDrugs.push(drug);
-        }
-        saveToLocalStorage('vicmed_drugs', allDrugs);
+        console.log('Firebase error: ' + e.message);
     }
 }
 
 async function saveSaleToFirebase(sale) {
     try {
-        if (window.db && !useLocalStorage) {
-            const salesRef = window.collection(window.db, 'sales');
-            if (sale.id) {
-                const saleRef = window.doc(window.db, 'sales', sale.id);
-                await window.updateDoc(saleRef, sale);
-            } else {
-                const docRef = await window.addDoc(salesRef, sale);
-                sale.id = docRef.id;
-            }
+        const salesRef = window.collection(window.db, 'sales');
+        if (sale.id) {
+            const saleRef = window.doc(window.db, 'sales', sale.id);
+            await window.updateDoc(saleRef, sale);
         } else {
-            if (!sale.id) sale.id = 'sale_' + Date.now();
-            const idx = allSales.findIndex(s => s.id === sale.id);
-            if (idx >= 0) {
-                allSales[idx] = sale;
-            } else {
-                allSales.push(sale);
-            }
-            saveToLocalStorage('vicmed_sales', allSales);
+            await window.addDoc(salesRef, sale);
         }
     } catch (e) {
-        console.log('Firebase error, using localStorage');
-        if (!sale.id) sale.id = 'sale_' + Date.now();
-        const idx = allSales.findIndex(s => s.id === sale.id);
-        if (idx >= 0) {
-            allSales[idx] = sale;
-        } else {
-            allSales.push(sale);
-        }
-        saveToLocalStorage('vicmed_sales', allSales);
+        console.log('Firebase error: ' + e.message);
     }
 }
 
 async function deleteDrugFromFirebase(id) {
     try {
-        if (window.db && !useLocalStorage) {
-            const drugRef = window.doc(window.db, 'drugs', id);
-            await window.deleteDoc(drugRef);
-        }
-        allDrugs = allDrugs.filter(d => d.id !== id);
-        saveToLocalStorage('vicmed_drugs', allDrugs);
+        const drugRef = window.doc(window.db, 'drugs', id);
+        await window.deleteDoc(drugRef);
     } catch (e) {
-        console.log('Firebase error, using localStorage');
-        allDrugs = allDrugs.filter(d => d.id !== id);
-        saveToLocalStorage('vicmed_drugs', allDrugs);
+        console.log('Firebase error: ' + e.message);
     }
 }
 
 async function deleteSaleFromFirebase(id) {
     try {
-        if (window.db && !useLocalStorage) {
-            const saleRef = window.doc(window.db, 'sales', id);
-            await window.deleteDoc(saleRef);
-        }
-        allSales = allSales.filter(s => s.id !== id);
-        saveToLocalStorage('vicmed_sales', allSales);
+        const saleRef = window.doc(window.db, 'sales', id);
+        await window.deleteDoc(saleRef);
     } catch (e) {
-        console.log('Firebase error, using localStorage');
-        allSales = allSales.filter(s => s.id !== id);
-        saveToLocalStorage('vicmed_sales', allSales);
+        console.log('Firebase error: ' + e.message);
     }
 }
 
 // ===== Init =====
 async function waitForFirebase() {
-    console.log('Waiting for Firebase...');
     let attempts = 0;
-    while (!window.db && attempts < 100) {
+    while (!window.db && attempts < 50) {
         await new Promise(r => setTimeout(r, 100));
         attempts++;
     }
-    if (window.db) {
-        console.log('Firebase ready!');
-        return true;
-    }
-    console.log('Firebase not available, using localStorage');
-    return false;
+    return !!window.db;
 }
 
 document.addEventListener("DOMContentLoaded", async () => {
@@ -236,14 +138,11 @@ document.addEventListener("DOMContentLoaded", async () => {
     
     showMainApp();
     
-    setTimeout(async () => {
-        const fbReady = await waitForFirebase();
-        if (fbReady) {
-            await loadDrugsFromFirebase();
-            await loadSalesFromFirebase();
-        }
-        loadAll();
-    }, 500);
+    const fbReady = await waitForFirebase();
+    if (fbReady) {
+        await loadDrugsFromFirebase();
+        await loadSalesFromFirebase();
+    }
 });
 
 function checkLoginStatus() {
@@ -355,14 +254,18 @@ async function initData() {
 
 function getDefaultDrugs() {
     return [
-        { id: "1", name: "Paracetamol", category: "Pain Relief", quantity: 100, price: 20, expiry: "2026-12-31" },
-        { id: "2", name: "Amoxicillin", category: "Antibiotic", quantity: 50, price: 150, expiry: "2026-06-30" },
-        { id: "3", name: "Aspirin", category: "Pain Relief", quantity: 75, price: 15, expiry: "2027-01-31" },
-        { id: "4", name: "Ibuprofen", category: "Pain Relief", quantity: 60, price: 35, expiry: "2026-09-30" },
-        { id: "5", name: "Cetirizine", category: "Allergy", quantity: 40, price: 25, expiry: "2026-08-31" },
-        { id: "6", name: "Vitamin C", category: "Vitamins", quantity: 200, price: 50, expiry: "2027-06-30" },
-        { id: "7", name: "Metronidazole", category: "Antibiotic", quantity: 30, price: 120, expiry: "2026-05-31" },
-        { id: "8", name: "Panadol", category: "Pain Relief", quantity: 80, price: 30, expiry: "2026-11-30" }
+        { id: "1", name: "Paracetamol 500mg", category: "Pain Relief", quantity: 500, price: 20, expiry: "2026-12-31" },
+        { id: "2", name: "Amoxicillin 250mg", category: "Antibiotic", quantity: 200, price: 150, expiry: "2026-06-30" },
+        { id: "3", name: "Aspirin 300mg", category: "Pain Relief", quantity: 300, price: 15, expiry: "2027-01-31" },
+        { id: "4", name: "Ibuprofen 400mg", category: "Pain Relief", quantity: 250, price: 35, expiry: "2026-09-30" },
+        { id: "5", name: "Cetirizine 10mg", category: "Allergy", quantity: 150, price: 25, expiry: "2026-08-31" },
+        { id: "6", name: "Vitamin C 1000mg", category: "Vitamins", quantity: 400, price: 50, expiry: "2027-06-30" },
+        { id: "7", name: "Metronidazole 200mg", category: "Antibiotic", quantity: 100, price: 120, expiry: "2026-05-31" },
+        { id: "8", name: "Panadol Extra", category: "Pain Relief", quantity: 350, price: 30, expiry: "2026-11-30" },
+        { id: "9", name: "Omeprazole 20mg", category: "Anti-ulcer", quantity: 180, price: 80, expiry: "2026-10-31" },
+        { id: "10", name: "Azithromycin 250mg", category: "Antibiotic", quantity: 120, price: 250, expiry: "2026-07-31" },
+        { id: "11", name: "ORS Powder", category: "Oral Rehydration", quantity: 600, price: 10, expiry: "2027-03-31" },
+        { id: "12", name: "Hydrocortisone Cream", category: "Skin", quantity: 80, price: 150, expiry: "2026-08-31" }
     ];
 }
 
@@ -385,17 +288,6 @@ function setCurrentDate() {
         day: "numeric" 
     });
     currentDateEl.textContent = dateStr;
-    
-    const statusEl = document.getElementById('storageStatus');
-    if (statusEl) {
-        if (useLocalStorage) {
-            statusEl.textContent = 'Local Storage';
-            statusEl.style.color = '#f59e0b';
-        } else {
-            statusEl.textContent = 'Firebase';
-            statusEl.style.color = '#22c55e';
-        }
-    }
 }
 
 // ===== Navigation =====
