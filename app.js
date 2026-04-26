@@ -119,20 +119,24 @@ async function saveSaleToFirebase(sale) {
 }
 
 async function deleteDrugFromFirebase(id) {
+    console.log('deleteDrugFromFirebase called with id:', id);
     try {
         const drugRef = window.doc('drugs', id);
         await window.deleteDoc(drugRef);
+        console.log('Drug deleted successfully');
     } catch (e) {
-        console.log('Firebase error: ' + e.message);
+        console.error('Firebase error: ' + e.message);
     }
 }
 
 async function deleteSaleFromFirebase(id) {
+    console.log('deleteSaleFromFirebase called with id:', id);
     try {
         const saleRef = window.doc('sales', id);
         await window.deleteDoc(saleRef);
+        console.log('Sale deleted successfully');
     } catch (e) {
-        console.log('Firebase error: ' + e.message);
+        console.error('Firebase error: ' + e.message);
     }
 }
 
@@ -522,12 +526,22 @@ function renderRecentSales() {
 }
 
 async function deleteSale(id) {
-    if (!confirm("Delete this sale?")) return;
+    console.log('=== deleteSale START ===');
+    console.log('id:', id, 'type:', typeof id);
+    alert('Attempting to delete sale: ' + id);
+    if (!confirm("Delete this sale?")) {
+        console.log('User cancelled');
+        return;
+    }
+    console.log('User confirmed, deleting...');
     await deleteSaleFromFirebase(id);
+    console.log('After deleteSaleFromFirebase');
     await loadSalesFromFirebase();
+    console.log('After loadSalesFromFirebase');
     loadSalesData();
     updateSalesTotals();
     renderRecentSales();
+    console.log('=== deleteSale COMPLETE ===');
 }
 
 // Sales filtering
@@ -685,11 +699,21 @@ async function saveDrug(e) {
 }
 
 async function deleteDrug(id) {
-    if (!confirm("Delete this drug from inventory?")) return;
+    console.log('=== deleteDrug START ===');
+    console.log('id:', id, 'type:', typeof id);
+    alert('Attempting to delete drug: ' + id);
+    if (!confirm("Delete this drug from inventory?")) {
+        console.log('User cancelled');
+        return;
+    }
+    console.log('User confirmed, deleting...');
     await deleteDrugFromFirebase(id);
+    console.log('After deleteDrugFromFirebase');
     await loadDrugsFromFirebase();
+    console.log('After loadDrugsFromFirebase');
     loadDrugs();
     updateInventoryStats();
+    console.log('=== deleteDrug COMPLETE ===');
 }
 
 // ===== Utilities =====
