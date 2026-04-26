@@ -220,6 +220,10 @@ function setupRoleBasedUI() {
     currentRole = role;
 }
 
+function loadAdminPages() {
+    // Admin pages initialized in showMainApp if needed
+}
+
 function setupLogin() {
     // Login handled in login.html
 }
