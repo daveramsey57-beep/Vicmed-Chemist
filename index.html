@@ -530,29 +530,47 @@
   </div>
 
 <!-- Firebase SDK -->
-  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js" onerror="console.error('Failed to load firebase-app-compat.js from gstatic.com'); window.firebaseLoadError=true"></script>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js" onerror="console.error('Failed to load firebase-firestore-compat.js from gstatic.com'); window.firebaseLoadError=true"></script>
   <script>
-    const firebaseConfig = {
-   apiKey: "AIzaSyAVgi6D3jFz_oduCXKANK5aehTOPudaqg8",
-    authDomain: "vicmed-chemist-508d4.firebaseapp.com",
-    projectId: "vicmed-chemist-508d4",
-    storageBucket: "vicmed-chemist-508d4.firebasestorage.app",
-    messagingSenderId: "382872503876",
-    appId: "1:382872503876:web:4b5dcf3de760470f5c9e11",
-    measurementId: "G-4EHFW0H7RY"
-    };
+    console.log('Firebase scripts loading...');
+    if (window.firebaseLoadError) {
+      console.error('ERROR: Firebase SDK failed to load from CDN');
+      console.error('This means gstatic.com may be blocked by firewall/VPN');
+      window.db = null;
+    } else {
+      try {
+        const firebaseConfig = {
+          apiKey: "AIzaSyAVgi6D3jFz_oduCXKANK5aehTOPudaqg8",
+          authDomain: "vicmed-chemist-508d4.firebaseapp.com",
+          projectId: "vicmed-chemist-508d4",
+          storageBucket: "vicmed-chemist-508d4.firebasestorage.app",
+          messagingSenderId: "382872503876",
+          appId: "1:382872503876:web:4b5dcf3de760470f5c9e11",
+          measurementId: "G-4EHFW0H7RY"
+        };
 
-    const app = firebase.initializeApp(firebaseConfig);
-    const db = firebase.firestore(app);
-
-    window.db = db;
-    window.collection = firebase.firestore.collection;
-    window.getDocs = firebase.firestore.getDocs;
-    window.doc = firebase.firestore.doc;
-    window.addDoc = firebase.firestore.addDoc;
-    window.updateDoc = firebase.firestore.updateDoc;
-    window.deleteDoc = firebase.firestore.deleteDoc;
+        console.log('Initializing Firebase app with config:', firebaseConfig.projectId);
+        const app = firebase.initializeApp(firebaseConfig);
+        console.log('Firebase app initialized:', app.name);
+        
+        console.log('Initializing Firestore...');
+        const db = firebase.firestore(app);
+        
+        window.db = db;
+        window.collection = firebase.firestore.collection;
+        window.getDocs = firebase.firestore.getDocs;
+        window.doc = firebase.firestore.doc;
+        window.addDoc = firebase.firestore.addDoc;
+        window.updateDoc = firebase.firestore.updateDoc;
+        window.deleteDoc = firebase.firestore.deleteDoc;
+        console.log('Firebase Firestore ready! db:', db);
+      } catch (e) {
+        console.error('ERROR initializing Firebase:', e.message);
+        console.error(e.stack);
+        window.db = null;
+      }
+    }
   </script>
   <script src="app.js"></script>
 </body>
