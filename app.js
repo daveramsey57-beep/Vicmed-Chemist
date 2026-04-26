@@ -51,7 +51,7 @@ const modalTitle = document.getElementById("modalTitle");
 // ===== Firebase Functions =====
 async function loadDrugsFromFirebase() {
     try {
-        console.log('Loading drugs, db:', window.db, 'type:', typeof window.db);
+        console.log('Loading drugs from Firebase, db:', window.db);
         if (!window.db) {
             console.error('loadDrugsFromFirebase: window.db is null/undefined');
             throw new Error('Firebase not ready');
@@ -62,6 +62,7 @@ async function loadDrugsFromFirebase() {
         snapshot.forEach(doc => {
             allDrugs.push({ id: doc.id, ...doc.data() });
         });
+        console.log('Loaded drugs count:', allDrugs.length);
     } catch (e) {
         console.error('Error loading drugs:', e);
         console.log('Loading default drugs (Firebase error)');
@@ -84,16 +85,22 @@ async function loadSalesFromFirebase() {
 }
 
 async function saveDrugToFirebase(drug) {
+    console.log('saveDrugToFirebase called with:', drug);
     try {
         if (drug.id) {
+            console.log('Updating existing drug:', drug.id);
             const drugRef = window.doc('drugs', drug.id);
             await window.updateDoc(drugRef, drug);
+            console.log('Drug updated successfully');
         } else {
+            console.log('Adding new drug...');
             const drugsRef = window.collection('drugs');
-            await window.addDoc(drugsRef, drug);
+            const docRef = await window.addDoc(drugsRef, drug);
+            console.log('Drug added successfully, docRef:', docRef.id);
         }
     } catch (e) {
-        console.log('Firebase error: ' + e.message);
+        console.error('Firebase error: ' + e.message);
+        console.error(e);
     }
 }
 
@@ -638,6 +645,7 @@ function closeModal() {
 
 async function saveDrug(e) {
     e.preventDefault();
+    console.log('saveDrug function triggered');
     
     const id = editDrugId.value;
     const name = document.getElementById("drugName").value;
@@ -645,6 +653,8 @@ async function saveDrug(e) {
     const price = Number(document.getElementById("drugPrice").value);
     const quantity = Number(document.getElementById("drugQuantity").value);
     const expiry = document.getElementById("drugExpiry").value;
+    
+    console.log('Form values - id:', id, 'name:', name, 'category:', category, 'price:', price, 'quantity:', quantity, 'expiry:', expiry);
 
     if (id) {
         const drug = allDrugs.find(d => d.id === id);
@@ -664,6 +674,7 @@ async function saveDrug(e) {
             quantity,
             expiry: expiry || null
         };
+        console.log('Creating new drug with data:', newDrug);
         await saveDrugToFirebase(newDrug);
     }
 
