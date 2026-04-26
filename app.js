@@ -56,7 +56,7 @@ async function loadDrugsFromFirebase() {
             console.error('loadDrugsFromFirebase: window.db is null/undefined');
             throw new Error('Firebase not ready');
         }
-        const drugsRef = window.collection(window.db, 'drugs');
+        const drugsRef = window.collection('drugs');
         const snapshot = await window.getDocs(drugsRef);
         allDrugs = [];
         snapshot.forEach(doc => {
@@ -71,7 +71,7 @@ async function loadDrugsFromFirebase() {
 
 async function loadSalesFromFirebase() {
     try {
-        const salesRef = window.collection(window.db, 'sales');
+        const salesRef = window.collection('sales');
         const snapshot = await window.getDocs(salesRef);
         allSales = [];
         snapshot.forEach(doc => {
@@ -86,10 +86,10 @@ async function loadSalesFromFirebase() {
 async function saveDrugToFirebase(drug) {
     try {
         if (drug.id) {
-            const drugRef = window.doc(window.db, 'drugs', drug.id);
+            const drugRef = window.doc('drugs', drug.id);
             await window.updateDoc(drugRef, drug);
         } else {
-            const drugsRef = window.collection(window.db, 'drugs');
+            const drugsRef = window.collection('drugs');
             await window.addDoc(drugsRef, drug);
         }
     } catch (e) {
@@ -99,9 +99,9 @@ async function saveDrugToFirebase(drug) {
 
 async function saveSaleToFirebase(sale) {
     try {
-        const salesRef = window.collection(window.db, 'sales');
+        const salesRef = window.collection('sales');
         if (sale.id) {
-            const saleRef = window.doc(window.db, 'sales', sale.id);
+            const saleRef = window.doc('sales', sale.id);
             await window.updateDoc(saleRef, sale);
         } else {
             await window.addDoc(salesRef, sale);
@@ -113,7 +113,7 @@ async function saveSaleToFirebase(sale) {
 
 async function deleteDrugFromFirebase(id) {
     try {
-        const drugRef = window.doc(window.db, 'drugs', id);
+        const drugRef = window.doc('drugs', id);
         await window.deleteDoc(drugRef);
     } catch (e) {
         console.log('Firebase error: ' + e.message);
@@ -122,7 +122,7 @@ async function deleteDrugFromFirebase(id) {
 
 async function deleteSaleFromFirebase(id) {
     try {
-        const saleRef = window.doc(window.db, 'sales', id);
+        const saleRef = window.doc('sales', id);
         await window.deleteDoc(saleRef);
     } catch (e) {
         console.log('Firebase error: ' + e.message);
@@ -140,14 +140,9 @@ async function waitForFirebase() {
         console.log('Attempt:', attempts, '| db:', typeof window.db, '| collection:', typeof window.collection);
     }
     if (!window.db || !window.collection) {
-        console.error('FIREBASE NOT READY - Possible causes:');
-        console.error('1. Check if gstatic.com is blocked by firewall/VPN');
-        console.error('2. Check browser console for script loading errors');
-        console.error('3. Network connectivity issue');
+        console.error('FIREBASE NOT READY');
         console.error('window.db:', typeof window.db);
         console.error('window.collection:', typeof window.collection);
-        console.error('window.firebaseLoadError:', window.firebaseLoadError);
-        alert('Firebase connection issue! Check browser console (F12) for details.');
         return false;
     } else {
         console.log('Firebase ready!');
