@@ -359,11 +359,11 @@ function navigateTo(page) {
     if (page === "inventory") {
         renderInventory();
     } else if (page === "stock") {
-        renderStock();
+        if (typeof renderStock === 'function') renderStock();
     } else if (page === "restock") {
-        renderRestockPage();
+        if (typeof renderRestockPage === 'function') renderRestockPage();
     } else if (page === "expiry") {
-        renderExpiryPage();
+        if (typeof renderExpiryPage === 'function') renderExpiryPage();
     } else if (page === "admin-panel") {
         populateAdminPanel();
     }
@@ -528,7 +528,6 @@ function renderRecentSales() {
 async function deleteSale(id) {
     console.log('=== deleteSale START ===');
     console.log('id:', id, 'type:', typeof id);
-    alert('Attempting to delete sale: ' + id);
     if (!confirm("Delete this sale?")) {
         console.log('User cancelled');
         return;
@@ -701,7 +700,6 @@ async function saveDrug(e) {
 async function deleteDrug(id) {
     console.log('=== deleteDrug START ===');
     console.log('id:', id, 'type:', typeof id);
-    alert('Attempting to delete drug: ' + id);
     if (!confirm("Delete this drug from inventory?")) {
         console.log('User cancelled');
         return;
