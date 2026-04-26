@@ -560,7 +560,7 @@
         window.db = db;
         window.collection = (colName) => db.collection(colName);
         window.getDocs = (colRef) => colRef.get();
-        window.doc = (db, colName, docId) => db.collection(colName).doc(docId);
+        window.doc = (colName, docId) => db.collection(colName).doc(docId);
         window.addDoc = (colRef, data) => colRef.add(data);
         window.updateDoc = (docRef, data) => docRef.update(data);
         window.deleteDoc = (docRef) => docRef.delete();
