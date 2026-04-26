@@ -133,37 +133,32 @@ async function deleteSaleFromFirebase(id) {
 async function waitForFirebase() {
     console.log('Waiting for Firebase...');
     let attempts = 0;
-    const maxAttempts = 30; // Increased to 15 seconds
-    while (!window.db && attempts < maxAttempts) {
+    const maxAttempts = 30;
+    while ((!window.db || !window.collection) && attempts < maxAttempts) {
         await new Promise(r => setTimeout(r, 500));
         attempts++;
-        console.log('Attempt:', attempts, '| db:', typeof window.db);
+        console.log('Attempt:', attempts, '| db:', typeof window.db, '| collection:', typeof window.collection);
     }
-    if (!window.db) {
+    if (!window.db || !window.collection) {
         console.error('FIREBASE NOT READY - Possible causes:');
         console.error('1. Check if gstatic.com is blocked by firewall/VPN');
         console.error('2. Check browser console for script loading errors');
         console.error('3. Network connectivity issue');
-        console.error('window.db:', window.db);
+        console.error('window.db:', typeof window.db);
+        console.error('window.collection:', typeof window.collection);
         console.error('window.firebaseLoadError:', window.firebaseLoadError);
-        console.error('typeof firebase:', typeof firebase);
         alert('Firebase connection issue! Check browser console (F12) for details.');
+        return false;
     } else {
         console.log('Firebase ready!');
     }
-    return !!window.db;
+    return true;
 }
 
 document.addEventListener("DOMContentLoaded", async () => {
     if (!checkLoginStatus()) return;
     
-    showMainApp();
-    
-    const fbReady = await waitForFirebase();
-    if (fbReady) {
-        await loadDrugsFromFirebase();
-        await loadSalesFromFirebase();
-    }
+    await showMainApp();
 });
 
 function checkLoginStatus() {
@@ -189,15 +184,21 @@ function showLoginPage() {
     window.location.href = "login.html";
 }
 
-function showMainApp() {
+async function showMainApp() {
     loginPage.style.display = "none";
     mainApp.style.display = "flex";
     mainApp.style.width = "100%";
     setupRoleBasedUI();
-    initData();
+    
+    const fbReady = await waitForFirebase();
+    if (!fbReady) {
+        console.warn('Using default data - Firebase not available');
+    }
+    
+    await initData();
     setupNavigation();
     setCurrentDate();
-    loadAll();
+    await loadAll();
     loadAdminPages();
 }
 
