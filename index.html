@@ -558,13 +558,17 @@
         const db = firebase.firestore(app);
         
         window.db = db;
-        window.collection = firebase.firestore.collection;
-        window.getDocs = firebase.firestore.getDocs;
-        window.doc = firebase.firestore.doc;
-        window.addDoc = firebase.firestore.addDoc;
-        window.updateDoc = firebase.firestore.updateDoc;
-        window.deleteDoc = firebase.firestore.deleteDoc;
+        window.collection = (colName) => db.collection(colName);
+        window.getDocs = (colRef) => colRef.get();
+        window.doc = (db, colName, docId) => db.collection(colName).doc(docId);
+        window.addDoc = (colRef, data) => colRef.add(data);
+        window.updateDoc = (docRef, data) => docRef.update(data);
+        window.deleteDoc = (docRef) => docRef.delete();
         console.log('Firebase Firestore ready! db:', db);
+        
+        console.log('Testing Firestore functions:');
+        console.log('window.collection:', typeof window.collection);
+        console.log('window.getDocs:', typeof window.getDocs);
       } catch (e) {
         console.error('ERROR initializing Firebase:', e.message);
         console.error(e.stack);
@@ -575,4 +579,3 @@
   <script src="app.js"></script>
 </body>
 </html>
-
