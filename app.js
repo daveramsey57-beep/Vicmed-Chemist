@@ -51,6 +51,11 @@ const modalTitle = document.getElementById("modalTitle");
 // ===== Firebase Functions =====
 async function loadDrugsFromFirebase() {
     try {
+        console.log('Loading drugs, db:', window.db, 'type:', typeof window.db);
+        if (!window.db) {
+            console.error('loadDrugsFromFirebase: window.db is null/undefined');
+            throw new Error('Firebase not ready');
+        }
         const drugsRef = window.collection(window.db, 'drugs');
         const snapshot = await window.getDocs(drugsRef);
         allDrugs = [];
@@ -58,7 +63,8 @@ async function loadDrugsFromFirebase() {
             allDrugs.push({ id: doc.id, ...doc.data() });
         });
     } catch (e) {
-        console.log('Loading default drugs (Firebase not ready yet)');
+        console.error('Error loading drugs:', e);
+        console.log('Loading default drugs (Firebase error)');
         allDrugs = getDefaultDrugs();
     }
 }
@@ -125,10 +131,25 @@ async function deleteSaleFromFirebase(id) {
 
 // ===== Init =====
 async function waitForFirebase() {
+    console.log('Waiting for Firebase...');
     let attempts = 0;
-    while (!window.db && attempts < 50) {
-        await new Promise(r => setTimeout(r, 100));
+    const maxAttempts = 30; // Increased to 15 seconds
+    while (!window.db && attempts < maxAttempts) {
+        await new Promise(r => setTimeout(r, 500));
         attempts++;
+        console.log('Attempt:', attempts, '| db:', typeof window.db);
+    }
+    if (!window.db) {
+        console.error('FIREBASE NOT READY - Possible causes:');
+        console.error('1. Check if gstatic.com is blocked by firewall/VPN');
+        console.error('2. Check browser console for script loading errors');
+        console.error('3. Network connectivity issue');
+        console.error('window.db:', window.db);
+        console.error('window.firebaseLoadError:', window.firebaseLoadError);
+        console.error('typeof firebase:', typeof firebase);
+        alert('Firebase connection issue! Check browser console (F12) for details.');
+    } else {
+        console.log('Firebase ready!');
     }
     return !!window.db;
 }
