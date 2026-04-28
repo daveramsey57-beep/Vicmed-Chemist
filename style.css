@@ -570,6 +570,10 @@ body::before {
   flex: 1;
 }
 
+.search-input-restock {
+  margin-bottom: 8px;
+}
+
 /* ===== Buttons ===== */
 .btn-primary {
   display: inline-flex;
