@@ -724,11 +724,16 @@ if (stockSearchBtn) {
 // ===== Restock Page =====
 function renderRestockPage() {
     const restockDrugSelect = document.getElementById("restockDrugSelect");
+    const restockSearch = document.getElementById("restockSearch");
     if (!restockDrugSelect) return;
     
     restockDrugSelect.innerHTML = '<option value="">Select a drug to restock</option>';
     
-    allDrugs.forEach(drug => {
+    const sortedDrugs = [...allDrugs].sort((a, b) => 
+        (a.name || '').localeCompare(b.name || '')
+    );
+    
+    sortedDrugs.forEach(drug => {
         const option = document.createElement("option");
         option.value = drug.id;
         option.textContent = `${drug.name} (${drug.category}) - Current: ${drug.quantity ?? 0}`;
@@ -752,6 +757,36 @@ function renderRestockPage() {
             lowStockNotice.style.display = 'none';
         }
     }
+}
+
+// Restock search functionality
+const restockSearchInput = document.getElementById("restockSearch");
+if (restockSearchInput) {
+    restockSearchInput.addEventListener("input", () => {
+        const query = restockSearchInput.value.trim().toLowerCase();
+        const restockDrugSelect = document.getElementById("restockDrugSelect");
+        if (!restockDrugSelect) return;
+        
+        restockDrugSelect.innerHTML = '<option value="">Select a drug to restock</option>';
+        
+        const sortedDrugs = [...allDrugs].sort((a, b) => 
+            (a.name || '').localeCompare(b.name || '')
+        );
+        
+        const filtered = query 
+            ? sortedDrugs.filter(d => 
+                (d.name?.toLowerCase().includes(query)) ||
+                (d.category?.toLowerCase().includes(query))
+              )
+            : sortedDrugs;
+        
+        filtered.forEach(drug => {
+            const option = document.createElement("option");
+            option.value = drug.id;
+            option.textContent = `${drug.name} (${drug.category}) - Current: ${drug.quantity ?? 0}`;
+            restockDrugSelect.appendChild(option);
+        });
+    });
 }
 
 // Handle drug selection change to show current stock
