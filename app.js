@@ -309,6 +309,11 @@ async function loadAll() {
     updateSalesTotals();
     updateInventoryStats();
     renderRecentSales();
+    renderStock();
+    console.log('loadAll complete, allDrugs length:', allDrugs.length);
+    if (allDrugs.length > 0) {
+        console.log('First drug:', allDrugs[0].name);
+    }
 }
 
 function setCurrentDate() {
@@ -633,9 +638,18 @@ function updateInventoryStats() {
 // ===== Stock Available Page =====
 function renderStock() {
     const stockBody = document.getElementById("stockBody");
-    if (!stockBody) return;
+    if (!stockBody) {
+        console.error('stockBody element not found');
+        return;
+    }
     
+    console.log('renderStock called, allDrugs length:', allDrugs.length);
     stockBody.innerHTML = "";
+    
+    if (allDrugs.length === 0) {
+        stockBody.innerHTML = '<tr><td colspan="5" style="text-align:center;color:#94a3b8;padding:40px;">No drugs in stock. Add drugs first.</td></tr>';
+        return;
+    }
     
     allDrugs.forEach(drug => {
         const row = document.createElement("tr");
@@ -653,50 +667,58 @@ function renderStock() {
         `;
         stockBody.appendChild(row);
     });
-    
-    if (allDrugs.length === 0) {
-        stockBody.innerHTML = '<tr><td colspan="5" style="text-align:center;color:#94a3b8;padding:40px;">No drugs in stock</td></tr>';
-    }
 }
 
 // Stock search functionality
 const stockSearchInput = document.getElementById("stockSearch");
-if (stockSearchInput) {
-    stockSearchInput.addEventListener("input", () => {
-        const query = stockSearchInput.value.trim().toLowerCase();
-        if (!query) {
-            renderStock();
-            return;
-        }
-        const filtered = allDrugs.filter(d => 
-            (d.name?.toLowerCase().includes(query)) ||
-            (d.category?.toLowerCase().includes(query))
-        );
-        const stockBody = document.getElementById("stockBody");
-        if (!stockBody) return;
-        stockBody.innerHTML = "";
+const stockSearchBtn = document.getElementById("stockSearchBtn");
+
+function performStockSearch() {
+    if (!stockSearchInput) return;
+    const query = stockSearchInput.value.trim().toLowerCase();
+    const stockBody = document.getElementById("stockBody");
+    if (!stockBody) return;
+    
+    stockBody.innerHTML = "";
+    
+    if (!query) {
+        renderStock();
+        return;
+    }
+    
+    const filtered = allDrugs.filter(d => 
+        (d.name?.toLowerCase().includes(query)) ||
+        (d.category?.toLowerCase().includes(query))
+    );
+    
+    filtered.forEach(drug => {
+        const row = document.createElement("tr");
+        const qty = drug.quantity ?? 0;
+        let stockClass = "in-stock";
+        if (qty === 0) stockClass = "out-of-stock";
+        else if (qty <= MIN_STOCK) stockClass = "low-stock";
         
-        filtered.forEach(drug => {
-            const row = document.createElement("tr");
-            const qty = drug.quantity ?? 0;
-            let stockClass = "in-stock";
-            if (qty === 0) stockClass = "out-of-stock";
-            else if (qty <= MIN_STOCK) stockClass = "low-stock";
-            
-            row.innerHTML = `
-                <td><strong>${drug.name}</strong></td>
-                <td>${drug.category}</td>
-                <td>${qty}</td>
-                <td>${formatKsh(drug.price)}</td>
-                <td><span class="stock-status ${stockClass}">${qty === 0 ? 'Out of Stock' : qty <= MIN_STOCK ? 'Low Stock' : 'In Stock'}</span></td>
-            `;
-            stockBody.appendChild(row);
-        });
-        
-        if (filtered.length === 0) {
-            stockBody.innerHTML = '<tr><td colspan="5" style="text-align:center;color:#94a3b8;padding:40px;">No matching drugs found</td></tr>';
-        }
+        row.innerHTML = `
+            <td><strong>${drug.name}</strong></td>
+            <td>${drug.category}</td>
+            <td>${qty}</td>
+            <td>${formatKsh(drug.price)}</td>
+            <td><span class="stock-status ${stockClass}">${qty === 0 ? 'Out of Stock' : qty <= MIN_STOCK ? 'Low Stock' : 'In Stock'}</span></td>
+        `;
+        stockBody.appendChild(row);
     });
+    
+    if (filtered.length === 0) {
+        stockBody.innerHTML = '<tr><td colspan="5" style="text-align:center;color:#94a3b8;padding:40px;">No matching drugs found</td></tr>';
+    }
+}
+
+if (stockSearchInput) {
+    stockSearchInput.addEventListener("input", performStockSearch);
+}
+
+if (stockSearchBtn) {
+    stockSearchBtn.addEventListener("click", performStockSearch);
 }
 
 // ===== Restock Page =====
