@@ -630,6 +630,161 @@ function updateInventoryStats() {
     renderInventory();
 }
 
+// ===== Stock Available Page =====
+function renderStock() {
+    const stockBody = document.getElementById("stockBody");
+    if (!stockBody) return;
+    
+    stockBody.innerHTML = "";
+    
+    allDrugs.forEach(drug => {
+        const row = document.createElement("tr");
+        const qty = drug.quantity ?? 0;
+        let stockClass = "in-stock";
+        if (qty === 0) stockClass = "out-of-stock";
+        else if (qty <= MIN_STOCK) stockClass = "low-stock";
+        
+        row.innerHTML = `
+            <td><strong>${drug.name}</strong></td>
+            <td>${drug.category}</td>
+            <td>${qty}</td>
+            <td>${formatKsh(drug.price)}</td>
+            <td><span class="stock-status ${stockClass}">${qty === 0 ? 'Out of Stock' : qty <= MIN_STOCK ? 'Low Stock' : 'In Stock'}</span></td>
+        `;
+        stockBody.appendChild(row);
+    });
+    
+    if (allDrugs.length === 0) {
+        stockBody.innerHTML = '<tr><td colspan="5" style="text-align:center;color:#94a3b8;padding:40px;">No drugs in stock</td></tr>';
+    }
+}
+
+// Stock search functionality
+const stockSearchInput = document.getElementById("stockSearch");
+if (stockSearchInput) {
+    stockSearchInput.addEventListener("input", () => {
+        const query = stockSearchInput.value.trim().toLowerCase();
+        if (!query) {
+            renderStock();
+            return;
+        }
+        const filtered = allDrugs.filter(d => 
+            (d.name?.toLowerCase().includes(query)) ||
+            (d.category?.toLowerCase().includes(query))
+        );
+        const stockBody = document.getElementById("stockBody");
+        if (!stockBody) return;
+        stockBody.innerHTML = "";
+        
+        filtered.forEach(drug => {
+            const row = document.createElement("tr");
+            const qty = drug.quantity ?? 0;
+            let stockClass = "in-stock";
+            if (qty === 0) stockClass = "out-of-stock";
+            else if (qty <= MIN_STOCK) stockClass = "low-stock";
+            
+            row.innerHTML = `
+                <td><strong>${drug.name}</strong></td>
+                <td>${drug.category}</td>
+                <td>${qty}</td>
+                <td>${formatKsh(drug.price)}</td>
+                <td><span class="stock-status ${stockClass}">${qty === 0 ? 'Out of Stock' : qty <= MIN_STOCK ? 'Low Stock' : 'In Stock'}</span></td>
+            `;
+            stockBody.appendChild(row);
+        });
+        
+        if (filtered.length === 0) {
+            stockBody.innerHTML = '<tr><td colspan="5" style="text-align:center;color:#94a3b8;padding:40px;">No matching drugs found</td></tr>';
+        }
+    });
+}
+
+// ===== Restock Page =====
+function renderRestockPage() {
+    const restockDrugSelect = document.getElementById("restockDrugSelect");
+    if (!restockDrugSelect) return;
+    
+    restockDrugSelect.innerHTML = '<option value="">Select a drug to restock</option>';
+    
+    allDrugs.forEach(drug => {
+        const option = document.createElement("option");
+        option.value = drug.id;
+        option.textContent = `${drug.name} (${drug.category}) - Current: ${drug.quantity ?? 0}`;
+        restockDrugSelect.appendChild(option);
+    });
+    
+    // Show low stock notice
+    const lowStockList = document.getElementById("lowStockList");
+    const lowStockNotice = document.getElementById("lowStockNotice");
+    if (lowStockList && lowStockNotice) {
+        const lowStockDrugs = allDrugs.filter(d => (d.quantity ?? 0) <= MIN_STOCK);
+        if (lowStockDrugs.length > 0) {
+            lowStockNotice.style.display = 'block';
+            lowStockList.innerHTML = '';
+            lowStockDrugs.forEach(d => {
+                const li = document.createElement("li");
+                li.textContent = `${d.name} - Only ${d.quantity ?? 0} left`;
+                lowStockList.appendChild(li);
+            });
+        } else {
+            lowStockNotice.style.display = 'none';
+        }
+    }
+}
+
+// Handle drug selection change to show current stock
+const restockDrugSelect = document.getElementById("restockDrugSelect");
+if (restockDrugSelect) {
+    restockDrugSelect.addEventListener("change", () => {
+        const drugId = restockDrugSelect.value;
+        const restockCurrentStock = document.getElementById("restockCurrentStock");
+        if (drugId && restockCurrentStock) {
+            const drug = allDrugs.find(d => d.id === drugId);
+            if (drug) {
+                restockCurrentStock.value = drug.quantity ?? 0;
+            }
+        } else if (restockCurrentStock) {
+            restockCurrentStock.value = '';
+        }
+    });
+}
+
+// Handle restock form submission
+const restockForm = document.getElementById("restockForm");
+if (restockForm) {
+    restockForm.addEventListener("submit", async (e) => {
+        e.preventDefault();
+        
+        const drugId = document.getElementById("restockDrugSelect").value;
+        const quantityToAdd = Number(document.getElementById("restockQuantity").value);
+        const supplier = document.getElementById("restockSupplier").value;
+        
+        if (!drugId || quantityToAdd <= 0) {
+            alert("Please select a drug and enter a valid quantity");
+            return;
+        }
+        
+        const drug = allDrugs.find(d => d.id === drugId);
+        if (!drug) {
+            alert("Drug not found!");
+            return;
+        }
+        
+        // Update drug quantity
+        drug.quantity = (drug.quantity ?? 0) + quantityToAdd;
+        await saveDrugToFirebase(drug);
+        
+        alert(`Successfully restocked ${drug.name} with ${quantityToAdd} units. New stock: ${drug.quantity}`);
+        
+        // Reset form
+        restockForm.reset();
+        document.getElementById("restockCurrentStock").value = '';
+        
+        // Refresh the page
+        renderRestockPage();
+    });
+}
+
 // ===== Modal Functions =====
 function showAddDrugModal() {
     modalTitle.textContent = "Add New Drug";
