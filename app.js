@@ -533,18 +533,31 @@ function renderRecentSales() {
 async function deleteSale(id) {
     console.log('=== deleteSale START ===');
     console.log('id:', id, 'type:', typeof id);
-    if (!confirm("Delete this sale?")) {
+    if (!confirm("Delete this sale? Stock will be restored to inventory.")) {
         console.log('User cancelled');
         return;
     }
     console.log('User confirmed, deleting...');
+    
+    // Find the sale to get drugId and quantity
+    const sale = allSales.find(s => s.id === id);
+    if (!sale) {
+        alert("Sale not found!");
+        return;
+    }
+    
+    // Restore quantity to drug inventory
+    const drug = allDrugs.find(d => d.id === sale.drugId);
+    if (drug) {
+        drug.quantity = (drug.quantity ?? 0) + sale.quantity;
+        await saveDrugToFirebase(drug);
+        console.log('Restored', sale.quantity, 'units to', drug.name);
+    }
+    
+    // Delete the sale
     await deleteSaleFromFirebase(id);
     console.log('After deleteSaleFromFirebase');
-    await loadSalesFromFirebase();
-    console.log('After loadSalesFromFirebase');
-    loadSalesData();
-    updateSalesTotals();
-    renderRecentSales();
+    await loadAll();
     console.log('=== deleteSale COMPLETE ===');
 }
 
